@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// StartWorker runs the task processing loop.
 func StartWorker(db *gorm.DB) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -21,7 +20,6 @@ func StartWorker(db *gorm.DB) {
 
 }
 
-// processPendingTasks selects and processes tasks.
 func processPendingTasks(db *gorm.DB) {
 	var task scheduler.Task
 
