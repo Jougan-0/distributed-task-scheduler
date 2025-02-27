@@ -2,9 +2,12 @@ package workers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
+	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"Jougan-0/distributed-task-scheduler/internal/redis"
 	"Jougan-0/distributed-task-scheduler/internal/scheduler"
 
 	"gorm.io/gorm"
@@ -17,7 +20,6 @@ func StartWorker(db *gorm.DB) {
 	for range ticker.C {
 		processPendingTasks(db)
 	}
-
 }
 
 func processPendingTasks(db *gorm.DB) {
@@ -34,21 +36,21 @@ func processPendingTasks(db *gorm.DB) {
 		return
 	}
 
-	err = scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusRunning)
-	if err != nil {
-		log.Printf("Worker: Failed to lock task ID=%d: %v", task.ID, err)
+	if err := scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusRunning); err != nil {
+		log.Printf("Worker: Failed to lock task ID=%s: %v", task.ID.String(), err)
 		return
 	}
 
-	log.Printf("Worker: Processing task ID=%d, Name=%s, Type=%s", task.ID, task.Name, task.Type)
+	log.Printf("Worker: Processing task ID=%s, Name=%s, Type=%s", task.ID.String(), task.Name, task.Type)
 
 	success := executeTask(task)
 
 	if success {
 		_ = scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusCompleted)
+		log.Printf("Worker: Task ID=%s completed.", task.ID.String())
+		kafka.PublishMessage("task-events", fmt.Sprintf("TaskCompleted:%s", task.ID.String()))
 	} else {
 		task.Attempts++
-
 		if task.Attempts >= task.MaxRetries {
 			_ = db.Model(&scheduler.Task{}).
 				Where("id = ?", task.ID).
@@ -56,7 +58,8 @@ func processPendingTasks(db *gorm.DB) {
 					"status":   scheduler.StatusFailed,
 					"attempts": task.Attempts,
 				}).Error
-			log.Printf("Worker: Task ID=%d has failed after %d retries.", task.ID, task.MaxRetries)
+			log.Printf("Worker: Task ID=%s has failed after %d retries.", task.ID.String(), task.MaxRetries)
+			kafka.PublishMessage("task-events", fmt.Sprintf("TaskFailed:%s", task.ID.String()))
 		} else {
 			_ = db.Model(&scheduler.Task{}).
 				Where("id = ?", task.ID).
@@ -64,9 +67,10 @@ func processPendingTasks(db *gorm.DB) {
 					"status":   scheduler.StatusPending,
 					"attempts": task.Attempts,
 				}).Error
-			log.Printf("Worker: Retrying task ID=%d (Attempt %d of %d)", task.ID, task.Attempts, task.MaxRetries)
+			log.Printf("Worker: Retrying task ID=%s (Attempt %d of %d)", task.ID.String(), task.Attempts, task.MaxRetries)
 		}
 	}
+	updatePendingTaskCount(db)
 }
 
 func executeTask(task scheduler.Task) bool {
@@ -93,4 +97,13 @@ func generateReport(payload string) bool {
 	log.Println("Worker: Generating report with payload:", payload)
 	time.Sleep(3 * time.Second)
 	return true
+}
+
+func updatePendingTaskCount(db *gorm.DB) {
+	var count int64
+	if err := db.Model(&scheduler.Task{}).Where("status = ?", scheduler.StatusPending).Count(&count).Error; err != nil {
+		log.Printf("Worker: Failed to update pending task count: %v", err)
+		return
+	}
+	redis.Client.Set(redis.Ctx, "pending_tasks_count", count, 10*time.Second)
 }
