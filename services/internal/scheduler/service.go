@@ -1,6 +1,9 @@
 package scheduler
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(&Task{})
@@ -22,7 +25,7 @@ func ListTasks(db *gorm.DB) ([]Task, error) {
 	return tasks, nil
 }
 
-func UpdateTaskStatus(db *gorm.DB, taskID uint, newStatus TaskStatus) error {
+func UpdateTaskStatus(db *gorm.DB, taskID uuid.UUID, newStatus TaskStatus) error {
 	return db.Model(&Task{}).
 		Where("id = ?", taskID).
 		Update("status", newStatus).

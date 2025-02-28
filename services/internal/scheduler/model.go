@@ -2,10 +2,12 @@ package scheduler
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Task struct {
-	ID            uint       `gorm:"primaryKey"`
+	ID            uuid.UUID  `gorm:"primaryKey"`
 	Name          string     `gorm:"type:varchar(255)"`
 	Type          string     `gorm:"type:varchar(50)"`
 	Payload       string     `gorm:"type:text"`

@@ -2,14 +2,18 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
+	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"Jougan-0/distributed-task-scheduler/internal/redis"
 	"Jougan-0/distributed-task-scheduler/internal/scheduler"
 )
 
@@ -43,6 +47,7 @@ func createTaskHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		task := &scheduler.Task{
+			ID:            uuid.New(),
 			Name:          req.Name,
 			Type:          req.Type,
 			Payload:       req.Payload,
@@ -58,8 +63,33 @@ func createTaskHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		eventMsg := fmt.Sprintf("TaskCreated:%s", task.ID.String())
+		if err := kafka.PublishMessage("task-events", eventMsg); err != nil {
+			log.Printf("Failed to publish Kafka event for task %s: %v", task.ID.String(), err)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(task)
+	}
+}
+
+func getPendingTaskCountHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cached, err := redis.Client.Get(redis.Ctx, "pending_tasks_count").Result()
+		if err != nil {
+			var count int64
+			if err := db.Model(&scheduler.Task{}).Where("status = ?", scheduler.StatusPending).Count(&count).Error; err != nil {
+				log.Printf("Error querying pending tasks: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			cached = strconv.Itoa(int(count))
+			redis.Client.Set(redis.Ctx, "pending_tasks_count", cached, 10*time.Second)
+		}
+
+		resp := map[string]string{"pending_tasks": cached}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
 	}
 }
 
@@ -86,9 +116,9 @@ func updateTaskStatusHandler(db *gorm.DB) http.HandlerFunc {
 		vars := mux.Vars(r)
 		taskIDStr := vars["id"]
 
-		taskID, err := strconv.Atoi(taskIDStr)
+		taskID, err := uuid.Parse(taskIDStr)
 		if err != nil {
-			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			http.Error(w, "Invalid task ID (UUID expected)", http.StatusBadRequest)
 			return
 		}
 
@@ -98,7 +128,7 @@ func updateTaskStatusHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		if err := scheduler.UpdateTaskStatus(db, uint(taskID), req.Status); err != nil {
+		if err := scheduler.UpdateTaskStatus(db, taskID, req.Status); err != nil {
 			log.Printf("Error updating task status: %v", err)
 			http.Error(w, "Failed to update task status", http.StatusInternalServerError)
 			return
