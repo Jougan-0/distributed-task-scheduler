@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"Jougan-0/distributed-task-scheduler/internal/metrics"
 	"Jougan-0/distributed-task-scheduler/internal/redis"
 	"Jougan-0/distributed-task-scheduler/internal/scheduler"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/gorm"
 )
 
@@ -36,6 +38,9 @@ func processPendingTasks(db *gorm.DB) {
 		return
 	}
 
+	timer := prometheus.NewTimer(metrics.TaskProcessingTime)
+	defer timer.ObserveDuration()
+
 	if err := scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusRunning); err != nil {
 		log.Printf("Worker: Failed to lock task ID=%s: %v", task.ID.String(), err)
 		return
@@ -47,10 +52,14 @@ func processPendingTasks(db *gorm.DB) {
 
 	if success {
 		_ = scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusCompleted)
+		metrics.TotalTasksProcessed.WithLabelValues("completed").Inc()
+		metrics.PendingTasksGauge.Dec()
 		log.Printf("Worker: Task ID=%s completed.", task.ID.String())
 		kafka.PublishMessage("task-events", fmt.Sprintf("TaskCompleted:%s", task.ID.String()))
 	} else {
 		task.Attempts++
+		metrics.TaskRetries.WithLabelValues(task.Type).Inc()
+
 		if task.Attempts >= task.MaxRetries {
 			_ = db.Model(&scheduler.Task{}).
 				Where("id = ?", task.ID).
@@ -58,6 +67,8 @@ func processPendingTasks(db *gorm.DB) {
 					"status":   scheduler.StatusFailed,
 					"attempts": task.Attempts,
 				}).Error
+			metrics.TotalTasksProcessed.WithLabelValues("failed").Inc()
+			metrics.PendingTasksGauge.Dec()
 			log.Printf("Worker: Task ID=%s has failed after %d retries.", task.ID.String(), task.MaxRetries)
 			kafka.PublishMessage("task-events", fmt.Sprintf("TaskFailed:%s", task.ID.String()))
 		} else {
@@ -106,4 +117,5 @@ func updatePendingTaskCount(db *gorm.DB) {
 		return
 	}
 	redis.Client.Set(redis.Ctx, "pending_tasks_count", count, 10*time.Second)
+	metrics.PendingTasksGauge.Set(float64(count))
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,6 @@ func NewRouter(db *gorm.DB) *mux.Router {
 	r.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
-	// r.Handle("/metrics", MetricsHandler())
+	r.Handle("/metrics", promhttp.Handler())
 	return r
 }

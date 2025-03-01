@@ -5,6 +5,7 @@ import (
 	"Jougan-0/distributed-task-scheduler/internal/config"
 	"Jougan-0/distributed-task-scheduler/internal/db"
 	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"Jougan-0/distributed-task-scheduler/internal/metrics"
 	"Jougan-0/distributed-task-scheduler/internal/redis"
 	"Jougan-0/distributed-task-scheduler/internal/scheduler"
 	"Jougan-0/distributed-task-scheduler/internal/workers"
@@ -37,6 +38,8 @@ func main() {
 		log.Fatalf("Failed to initialize Kafka: %v", err)
 	}
 	log.Println("Kafka Producer initialized successfully.")
+
+	metrics.RegisterMetrics()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
