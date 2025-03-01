@@ -1,6 +1,10 @@
 package scheduler
 
 import (
+	"Jougan-0/distributed-task-scheduler/internal/elasticsearch"
+	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"log"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -12,7 +16,16 @@ func AutoMigrate(db *gorm.DB) error {
 func CreateTask(db *gorm.DB, t *Task) (*Task, error) {
 	t.Status = StatusPending
 	if err := db.Create(t).Error; err != nil {
+		log.Printf("Failed to create task in DB: %v", err)
 		return nil, err
+	}
+
+	if err := elasticsearch.IndexTask("tasks", t); err != nil {
+		log.Printf("Failed to index task in Elasticsearch: %v", err)
+	}
+	eventMsg := "TaskCreated:" + t.ID.String()
+	if err := kafka.PublishMessage("task-events", eventMsg); err != nil {
+		log.Printf("Failed to publish Kafka event: %v", err)
 	}
 	return t, nil
 }

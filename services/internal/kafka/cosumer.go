@@ -36,10 +36,9 @@ func (h ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, 
 			log.Printf("Kafka Consumer: Invalid UUID in message: %s", parts[1])
 			continue
 		}
-
+		AddEvent(value)
 		log.Printf("Kafka Consumer: Received event '%s' for Task ID=%s", parts[0], taskID.String())
 
-		// All the further events that needs to be done can be processed here.
 	}
 	return nil
 }
