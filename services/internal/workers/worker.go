@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"Jougan-0/distributed-task-scheduler/internal/api"
 	"Jougan-0/distributed-task-scheduler/internal/kafka"
 	"Jougan-0/distributed-task-scheduler/internal/metrics"
 	"Jougan-0/distributed-task-scheduler/internal/redis"
@@ -34,6 +35,7 @@ func processPendingTasks(db *gorm.DB) {
 	if err != nil {
 		if err != gorm.ErrRecordNotFound {
 			log.Printf("Worker: Error fetching task: %v", err)
+			api.BroadcastLog(fmt.Sprintf("Worker: Error fetching task: %v", err))
 		}
 		return
 	}
@@ -41,8 +43,11 @@ func processPendingTasks(db *gorm.DB) {
 	timer := prometheus.NewTimer(metrics.TaskProcessingTime)
 	defer timer.ObserveDuration()
 
+	api.BroadcastLog(fmt.Sprintf("Worker: Processing task ID=%s, Type=%s", task.ID.String(), task.Type))
+
 	if err := scheduler.UpdateTaskStatus(db, task.ID, scheduler.StatusRunning); err != nil {
 		log.Printf("Worker: Failed to lock task ID=%s: %v", task.ID.String(), err)
+		api.BroadcastLog(fmt.Sprintf("Worker: Failed to lock task ID=%s: %v", task.ID.String(), err))
 		return
 	}
 
@@ -55,6 +60,7 @@ func processPendingTasks(db *gorm.DB) {
 		metrics.TotalTasksProcessed.WithLabelValues("completed").Inc()
 		metrics.PendingTasksGauge.Dec()
 		log.Printf("Worker: Task ID=%s completed.", task.ID.String())
+		api.BroadcastLog(fmt.Sprintf("Worker: Task ID=%s completed.", task.ID.String()))
 		kafka.PublishMessage("task-events", fmt.Sprintf("TaskCompleted:%s", task.ID.String()))
 	} else {
 		task.Attempts++
@@ -70,6 +76,7 @@ func processPendingTasks(db *gorm.DB) {
 			metrics.TotalTasksProcessed.WithLabelValues("failed").Inc()
 			metrics.PendingTasksGauge.Dec()
 			log.Printf("Worker: Task ID=%s has failed after %d retries.", task.ID.String(), task.MaxRetries)
+			api.BroadcastLog(fmt.Sprintf("Worker: Task ID=%s failed after %d retries.", task.ID.String(), task.MaxRetries))
 			kafka.PublishMessage("task-events", fmt.Sprintf("TaskFailed:%s", task.ID.String()))
 		} else {
 			_ = db.Model(&scheduler.Task{}).
@@ -79,6 +86,7 @@ func processPendingTasks(db *gorm.DB) {
 					"attempts": task.Attempts,
 				}).Error
 			log.Printf("Worker: Retrying task ID=%s (Attempt %d of %d)", task.ID.String(), task.Attempts, task.MaxRetries)
+			api.BroadcastLog(fmt.Sprintf("Worker: Retrying task ID=%s (Attempt %d of %d)", task.ID.String(), task.Attempts, task.MaxRetries))
 		}
 	}
 	updatePendingTaskCount(db)

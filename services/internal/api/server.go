@@ -14,13 +14,14 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewServer(cfg *config.Config, db *gorm.DB) *Server {
+func NewServer(cfg *config.Config, db *gorm.DB) *http.Server {
 	router := NewRouter(db)
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.ServerPort),
 		Handler: router,
 	}
-	return &Server{httpServer: srv}
+
+	return srv
 }
 
 func (s *Server) ListenAndServe() error {
