@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"Jougan-0/distributed-task-scheduler/internal/kafka"
+	"Jougan-0/distributed-task-scheduler/internal/metrics"
 	"Jougan-0/distributed-task-scheduler/internal/redis"
 	"Jougan-0/distributed-task-scheduler/internal/scheduler"
 )
@@ -62,6 +63,8 @@ func createTaskHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Failed to create task", http.StatusInternalServerError)
 			return
 		}
+
+		metrics.PendingTasksGauge.Inc()
 
 		eventMsg := fmt.Sprintf("TaskCreated:%s", task.ID.String())
 		if err := kafka.PublishMessage("task-events", eventMsg); err != nil {
