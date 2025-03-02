@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"Jougan-0/distributed-task-scheduler/internal/elasticsearch"
-	"Jougan-0/distributed-task-scheduler/internal/kafka"
 	"log"
 
 	"github.com/google/uuid"
@@ -22,10 +21,6 @@ func CreateTask(db *gorm.DB, t *Task) (*Task, error) {
 
 	if err := elasticsearch.IndexTask("tasks", t); err != nil {
 		log.Printf("Failed to index task in Elasticsearch: %v", err)
-	}
-	eventMsg := "TaskCreated:" + t.ID.String()
-	if err := kafka.PublishMessage("task-events", eventMsg); err != nil {
-		log.Printf("Failed to publish Kafka event: %v", err)
 	}
 	return t, nil
 }

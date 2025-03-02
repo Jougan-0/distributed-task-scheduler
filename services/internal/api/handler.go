@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -58,7 +57,8 @@ func createTaskHandler(db *gorm.DB) http.HandlerFunc {
 			Priority:      req.Priority,
 		}
 
-		if err := db.Create(task).Error; err != nil {
+		createdTask, err := scheduler.CreateTask(db, task)
+		if err != nil {
 			log.Printf("Error creating task: %v", err)
 			http.Error(w, "Failed to create task", http.StatusInternalServerError)
 			return
@@ -66,13 +66,21 @@ func createTaskHandler(db *gorm.DB) http.HandlerFunc {
 
 		metrics.PendingTasksGauge.Inc()
 
-		eventMsg := fmt.Sprintf("TaskCreated:%s", task.ID.String())
-		if err := kafka.PublishMessage("task-events", eventMsg); err != nil {
-			log.Printf("Failed to publish Kafka event for task %s: %v", task.ID.String(), err)
+		eventMsg, _ := json.Marshal(kafka.KafkaEvent{
+			Event:         "TaskCreated",
+			TaskID:        createdTask.ID,
+			TaskName:      createdTask.Name,
+			TaskType:      createdTask.Type,
+			Priority:      createdTask.Priority,
+			ScheduledTime: createdTask.ScheduledTime.Format(time.RFC3339),
+		})
+
+		if err := kafka.PublishMessage("task-events", string(eventMsg)); err != nil {
+			log.Printf("Failed to publish Kafka event for task %s: %v", createdTask.ID.String(), err)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(task)
+		json.NewEncoder(w).Encode(createdTask)
 	}
 }
 

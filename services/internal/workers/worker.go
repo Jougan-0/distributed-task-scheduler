@@ -61,7 +61,20 @@ func processPendingTasks(db *gorm.DB) {
 		metrics.PendingTasksGauge.Dec()
 		log.Printf("Worker: Task ID=%s completed.", task.ID.String())
 		api.BroadcastLog(fmt.Sprintf("Worker: Task ID=%s completed.", task.ID.String()))
-		kafka.PublishMessage("task-events", fmt.Sprintf("TaskCompleted:%s", task.ID.String()))
+		eventMsg, _ := json.Marshal(kafka.KafkaEvent{
+			Event:         "TaskCompleted",
+			TaskID:        task.ID,
+			TaskName:      task.Name,
+			TaskType:      task.Type,
+			Priority:      task.Priority,
+			ScheduledTime: task.ScheduledTime.Format(time.RFC3339),
+			CompletedAt:   time.Now().Format(time.RFC3339),
+		})
+
+		if err := kafka.PublishMessage("task-events", string(eventMsg)); err != nil {
+			log.Printf("Failed to publish Kafka event for completed task %s: %v", task.ID.String(), err)
+		}
+
 	} else {
 		task.Attempts++
 		metrics.TaskRetries.WithLabelValues(task.Type).Inc()
@@ -77,7 +90,22 @@ func processPendingTasks(db *gorm.DB) {
 			metrics.PendingTasksGauge.Dec()
 			log.Printf("Worker: Task ID=%s has failed after %d retries.", task.ID.String(), task.MaxRetries)
 			api.BroadcastLog(fmt.Sprintf("Worker: Task ID=%s failed after %d retries.", task.ID.String(), task.MaxRetries))
-			kafka.PublishMessage("task-events", fmt.Sprintf("TaskFailed:%s", task.ID.String()))
+			eventMsg, _ := json.Marshal(kafka.KafkaEvent{
+				Event:         "TaskFailed",
+				TaskID:        task.ID,
+				TaskName:      task.Name,
+				TaskType:      task.Type,
+				Priority:      task.Priority,
+				Attempts:      int(task.Attempts),
+				MaxRetries:    int(task.MaxRetries),
+				ScheduledTime: task.ScheduledTime.Format(time.RFC3339),
+				FailedAt:      time.Now().Format(time.RFC3339),
+			})
+
+			if err := kafka.PublishMessage("task-events", string(eventMsg)); err != nil {
+				log.Printf("Failed to publish Kafka event for failed task %s: %v", task.ID.String(), err)
+			}
+
 		} else {
 			_ = db.Model(&scheduler.Task{}).
 				Where("id = ?", task.ID).

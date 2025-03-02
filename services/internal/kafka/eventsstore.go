@@ -6,19 +6,19 @@ import (
 
 var (
 	mu     sync.Mutex
-	events []string
+	events []KafkaEvent
 )
 
-func AddEvent(e string) {
+func AddEvent(e KafkaEvent) {
 	mu.Lock()
 	defer mu.Unlock()
 	events = append(events, e)
 }
 
-func GetEvents() []string {
+func GetEvents() []KafkaEvent {
 	mu.Lock()
 	defer mu.Unlock()
-	copied := make([]string, len(events))
+	copied := make([]KafkaEvent, len(events))
 	copy(copied, events)
 	return copied
 }
