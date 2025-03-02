@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
@@ -26,26 +28,42 @@ func InitElasticsearch(esURL string) error {
 
 func IndexTask(index string, task interface{}) error {
 	body, _ := json.Marshal(task)
-
 	req := bytes.NewReader(body)
-	_, err := ESClient.Index(index, req)
+
+	res, err := ESClient.Index(index, req)
 	if err != nil {
 		log.Printf("Failed to index task: %v", err)
+		return err
 	}
-	return err
+	defer res.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(res.Body)
+	log.Printf("Elasticsearch Response: %s", string(bodyBytes))
+
+	if res.IsError() {
+		return fmt.Errorf("elasticsearch error: %s", string(bodyBytes))
+	}
+
+	log.Println("Task indexed successfully")
+	return nil
 }
 
-// Search Tasks in Elasticsearch
 func SearchTasks(index, query string) ([]map[string]interface{}, error) {
 	var buf bytes.Buffer
+
 	queryBody := map[string]interface{}{
 		"query": map[string]interface{}{
-			"match": map[string]string{
-				"name": query,
+			"term": map[string]interface{}{
+				"Name.keyword": query,
 			},
 		},
 	}
-	json.NewEncoder(&buf).Encode(queryBody)
+
+	log.Printf("Elasticsearch Query: %+v", query)
+
+	if err := json.NewEncoder(&buf).Encode(queryBody); err != nil {
+		return nil, fmt.Errorf("error encoding query: %w", err)
+	}
 
 	res, err := ESClient.Search(
 		ESClient.Search.WithContext(context.Background()),
@@ -54,17 +72,42 @@ func SearchTasks(index, query string) ([]map[string]interface{}, error) {
 		ESClient.Search.WithPretty(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("elasticsearch search error: %w", err)
 	}
 	defer res.Body.Close()
 
-	var result map[string]interface{}
-	json.NewDecoder(res.Body).Decode(&result)
+	if res.IsError() {
+		bodyBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("search returned status %d: %s", res.StatusCode, string(bodyBytes))
+	}
 
-	hits := result["hits"].(map[string]interface{})["hits"].([]interface{})
+	var result map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error parsing search response: %w", err)
+	}
+
+	rawHits, ok := result["hits"].(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	innerHits, ok := rawHits["hits"].([]interface{})
+	if !ok {
+		return nil, nil
+	}
+
 	var tasks []map[string]interface{}
-	for _, hit := range hits {
-		source := hit.(map[string]interface{})["_source"].(map[string]interface{})
+	for _, hit := range innerHits {
+		h, ok := hit.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		source, ok := h["_source"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
 		tasks = append(tasks, source)
 	}
 

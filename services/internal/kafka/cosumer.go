@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"strings"
@@ -11,6 +12,18 @@ import (
 	"github.com/google/uuid"
 )
 
+type KafkaEvent struct {
+	Event         string    `json:"event"`
+	TaskID        uuid.UUID `json:"task_id"`
+	TaskName      string    `json:"task_name"`
+	TaskType      string    `json:"task_type"`
+	Priority      int       `json:"priority"`
+	Attempts      int       `json:"attempts,omitempty"`
+	MaxRetries    int       `json:"max_retries,omitempty"`
+	ScheduledTime string    `json:"scheduled_time"`
+	CompletedAt   string    `json:"completed_at,omitempty"`
+	FailedAt      string    `json:"failed_at,omitempty"`
+}
 type ConsumerGroupHandler struct{}
 
 func (ConsumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
@@ -23,22 +36,17 @@ func (ConsumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
 
 func (h ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
-		value := string(message.Value)
+		var event KafkaEvent
 
-		parts := strings.Split(value, ":")
-		if len(parts) != 2 {
-			log.Printf("Kafka Consumer: Invalid message format: %s", value)
+		if err := json.Unmarshal(message.Value, &event); err != nil {
+			log.Printf("Kafka Consumer: Failed to parse JSON: %v, Message: %s", err, string(message.Value))
 			continue
 		}
 
-		taskID, err := uuid.Parse(strings.TrimSpace(parts[1]))
-		if err != nil {
-			log.Printf("Kafka Consumer: Invalid UUID in message: %s", parts[1])
-			continue
-		}
-		AddEvent(value)
-		log.Printf("Kafka Consumer: Received event '%s' for Task ID=%s", parts[0], taskID.String())
+		AddEvent(event)
+		log.Printf("Kafka Consumer: Received event '%s' for Task ID=%s", event.Event, event.TaskID.String())
 
+		session.MarkMessage(message, "")
 	}
 	return nil
 }

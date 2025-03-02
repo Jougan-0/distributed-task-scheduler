@@ -22,7 +22,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
 
     ws.onmessage = (event) => {
-      console.log("Global WS got message:", event.data);
       setLogs((prev) => [event.data, ...prev]);
     };
 
