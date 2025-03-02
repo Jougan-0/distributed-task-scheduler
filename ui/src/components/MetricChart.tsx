@@ -3,57 +3,108 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from "recharts";
 
-const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || "http://localhost:9090";
+const PROMETHEUS_URL =
+  process.env.NEXT_PUBLIC_PROMETHEUS_URL || "http://localhost:9090";
 
 interface MetricChartProps {
-  metricName: string;
+  promQuery: string;
   title: string;
   yAxisLabel: string;
+  rangeSeconds?: number; 
+  stepSeconds?: number;
 }
 
-export default function MetricChart({ metricName, title, yAxisLabel }: MetricChartProps) {
+
+function parsePrometheusData(results: any[]): any[] {
+  const dataMap: Record<string, Record<string, number | string>> = {};
+
+  results.forEach((series) => {
+    const labelString = Object.entries(series.metric)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(", ");
+
+    series.values.forEach(([timestamp, value]: [number, string]) => {
+      const timeStr = new Date(timestamp * 1000).toLocaleTimeString();
+      if (!dataMap[timeStr]) {
+        dataMap[timeStr] = { time: timeStr };
+      }
+      dataMap[timeStr][labelString] = parseFloat(value);
+    });
+  });
+
+  const allTimes = Object.keys(dataMap).sort((a, b) => {
+    return (
+      new Date(`1970-01-01T${a}`).getTime() -
+      new Date(`1970-01-01T${b}`).getTime()
+    );
+  });
+
+  return allTimes.map((t) => dataMap[t]);
+}
+
+export default function MetricChart({
+  promQuery,
+  title,
+  yAxisLabel,
+  rangeSeconds = 1800,
+  stepSeconds = 15,
+}: MetricChartProps) {
   const [data, setData] = useState<any[]>([]);
+  const [seriesKeys, setSeriesKeys] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const end = Math.floor(Date.now() / 1000);
-        const start = end - 1800; 
-        const step = 15;
+        const start = end - rangeSeconds;
+        const step = stepSeconds;
 
         const res = await axios.get(`${PROMETHEUS_URL}/api/v1/query_range`, {
           params: {
-            query: metricName,
+            query: promQuery,
             start,
             end,
             step,
           },
         });
 
-        if (res.data.data.result.length > 0) {
-          const metricData = res.data.data.result[0].values.map(
-            ([timestamp, value]: [number, string]) => ({
-              time: new Date(timestamp * 1000).toLocaleTimeString(),
-              value: parseFloat(value),
-            })
-          );
-          setData(metricData);
+        const result = res.data.data.result || [];
+        if (result.length > 0) {
+          const chartData = parsePrometheusData(result);
+          setData(chartData);
+
+          const allKeys = new Set<string>();
+          chartData.forEach((item) => {
+            Object.keys(item).forEach((k) => {
+              if (k !== "time") {
+                allKeys.add(k);
+              }
+            });
+          });
+          setSeriesKeys(Array.from(allKeys));
         } else {
           setData([]);
+          setSeriesKeys([]);
         }
       } catch (err) {
-        console.error(`Error fetching ${metricName} data:`, err);
+        console.error(`Error fetching data for query "${promQuery}":`, err);
       }
     };
 
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 5000);
     return () => clearInterval(interval);
-  }, [metricName]);
+  }, [promQuery, rangeSeconds, stepSeconds]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -64,7 +115,12 @@ export default function MetricChart({ metricName, title, yAxisLabel }: MetricCha
           <XAxis dataKey="time" stroke="#000" />
           <YAxis
             stroke="#000"
-            label={{ value: yAxisLabel, angle: -90, position: "insideLeft", fill: "#000" }}
+            label={{
+              value: yAxisLabel,
+              angle: -90,
+              position: "insideLeft",
+              fill: "#000",
+            }}
           />
           <Tooltip
             contentStyle={{ backgroundColor: "#fff", color: "#000" }}
@@ -72,13 +128,16 @@ export default function MetricChart({ metricName, title, yAxisLabel }: MetricCha
             itemStyle={{ color: "#000" }}
           />
           <Legend wrapperStyle={{ color: "#000" }} />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="#FF0000"
-            strokeWidth={2}
-            dot={false}
-          />
+
+          {seriesKeys.map((key) => (
+            <Line
+              key={key}
+              type="monotone"
+              dataKey={key}
+              strokeWidth={2}
+              dot={false}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>

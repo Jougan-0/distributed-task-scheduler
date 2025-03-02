@@ -7,7 +7,7 @@ export default function LogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-2xl font-bold">Backend Logs (WebSocket)</h1>
+      <h1 className="text-2xl font-bold text-white">Backend Logs (WebSocket)</h1>
       <div className="bg-gray-800 p-4 mt-4 rounded-lg min-h-[300px]">
         {logs.length === 0 ? (
           <p className="text-gray-400">No logs yet...</p>
