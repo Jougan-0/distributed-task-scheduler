@@ -30,6 +30,7 @@ func NewRouter(db *gorm.DB) http.Handler {
 	})
 
 	r.Handle("/metrics", promhttp.Handler())
+	r.HandleFunc("/api/v1/prometheus/query", PrometheusQueryHandler).Methods("GET")
 
 	r.HandleFunc("/kafka/events", getKafkaEventsHandler).Methods("GET")
 	r.HandleFunc("/redis/keys", getRedisKeysHandler).Methods("GET")
