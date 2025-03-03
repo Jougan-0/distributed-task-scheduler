@@ -1,6 +1,5 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-export const dynamic = "force-dynamic";
 
 interface IWebSocketContext {
   logs: string[];
