@@ -32,7 +32,7 @@ export default function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showCustomForm]);
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL||"http://localhost:8080";
   const createExampleTask = async () => {
     setMessage("Creating example task...");
     try {
@@ -60,7 +60,7 @@ export default function Home() {
   const createCustomTask = async () => {
     setMessage("Creating custom task...");
     try {
-      const res = await fetch("http://localhost:8080/api/v1/tasks", {
+      const res = await fetch(`${BACKEND_URL}/api/v1/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

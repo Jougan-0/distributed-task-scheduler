@@ -13,8 +13,8 @@ import {
   Legend,
 } from "recharts";
 
-const PROMETHEUS_URL =
-  process.env.NEXT_PUBLIC_PROMETHEUS_URL || "http://localhost:9090";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
 interface MetricChartProps {
   promQuery: string;
@@ -69,7 +69,7 @@ export default function MetricChart({
         const start = end - rangeSeconds;
         const step = stepSeconds;
 
-        const res = await axios.get(`${PROMETHEUS_URL}/api/v1/query_range`, {
+        const res = await axios.get(`${BACKEND_URL}/api/v1/query_range`, {
           params: {
             query: promQuery,
             start,
