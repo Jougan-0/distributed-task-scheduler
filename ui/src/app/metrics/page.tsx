@@ -1,7 +1,7 @@
 "use client";
 
 import MetricChart from "@/components/MetricChart";
-
+export const dynamic = "force-dynamic";
 export default function MetricsPage() {
   return (
     <div className="p-6">

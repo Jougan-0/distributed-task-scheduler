@@ -13,7 +13,7 @@ interface KafkaEvent {
   failed_at?: string;
   raw?: string;
 }
-
+export const dynamic = "force-dynamic";
 export default function KafkaEventsPage() {
   const [events, setEvents] = useState<KafkaEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);

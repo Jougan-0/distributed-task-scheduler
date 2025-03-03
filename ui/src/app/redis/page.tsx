@@ -6,7 +6,7 @@ interface RedisKeyValue {
   key: string;
   value: string;
 }
-
+export const dynamic = "force-dynamic";
 export default function RedisPage() {
   const [data, setData] = useState<RedisKeyValue[]>([]);
   const [loading, setLoading] = useState(true);

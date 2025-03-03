@@ -17,7 +17,7 @@ interface Task {
   Type: string;
   UpdatedAt: string;
 }
-
+export const dynamic = "force-dynamic"; // Ensure the page is SSR, not static
 export default function ElasticsearchPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [query, setQuery] = useState("DemoTask");

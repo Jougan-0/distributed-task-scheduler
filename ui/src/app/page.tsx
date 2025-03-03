@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-
+export const dynamic = "force-dynamic";
 export default function Home() {
   const [message, setMessage] = useState("");
 
