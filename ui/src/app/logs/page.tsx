@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-
+export const revalidate = 0;
 import { useWebSocketContext } from "../WebSocketProvider";
 export default function LogsPage() {
   const { logs } = useWebSocketContext();
