@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 )
@@ -22,6 +23,31 @@ func InitElasticsearch(esURL string) error {
 		return err
 	}
 	ESClient = client
+	res, err := ESClient.Indices.Exists([]string{"tasks"})
+	if err != nil {
+		log.Printf("Failed to check if index exists: %v", err)
+	} else if res.StatusCode == 404 {
+		log.Println("Index 'tasks' not found. Creating it now...")
+		_, err := ESClient.Indices.Create("tasks",
+			ESClient.Indices.Create.WithBody(strings.NewReader(`{
+				"settings": { "number_of_shards": 1, "number_of_replicas": 1 },
+				"mappings": {
+					"properties": {
+						"Name": { "type": "text" },
+						"Status": { "type": "keyword" },
+						"Priority": { "type": "integer" },
+						"CreatedAt": { "type": "date" }
+					}
+				}
+			}`)),
+		)
+		if err != nil {
+			log.Printf("Failed to create tasks index: %v", err)
+		} else {
+			log.Println("Tasks index created successfully")
+		}
+	}
+
 	log.Println("Elasticsearch initialized successfully.")
 	return nil
 }
