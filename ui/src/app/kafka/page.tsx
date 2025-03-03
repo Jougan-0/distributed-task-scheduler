@@ -1,4 +1,6 @@
 "use client";
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
@@ -13,7 +15,6 @@ interface KafkaEvent {
   failed_at?: string;
   raw?: string;
 }
-export const dynamic = "force-dynamic";
 export default function KafkaEventsPage() {
   const [events, setEvents] = useState<KafkaEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);

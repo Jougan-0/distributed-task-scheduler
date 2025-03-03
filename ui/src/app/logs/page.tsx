@@ -1,6 +1,7 @@
 "use client";
-import { useWebSocketContext } from "../WebSocketProvider";
 export const dynamic = "force-dynamic";
+
+import { useWebSocketContext } from "../WebSocketProvider";
 export default function LogsPage() {
   const { logs } = useWebSocketContext();
 
