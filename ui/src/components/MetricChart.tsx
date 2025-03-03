@@ -13,16 +13,17 @@ import {
   Legend,
 } from "recharts";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const PROMETHEUS_URL =
+  process.env.NEXT_PUBLIC_PROMETHEUS_URL || "http://localhost:9090";
 
 interface MetricChartProps {
   promQuery: string;
   title: string;
   yAxisLabel: string;
-  rangeSeconds?: number;
+  rangeSeconds?: number; 
   stepSeconds?: number;
 }
+
 
 function parsePrometheusData(results: any[]): any[] {
   const dataMap: Record<string, Record<string, number | string>> = {};
@@ -68,7 +69,7 @@ export default function MetricChart({
         const start = end - rangeSeconds;
         const step = stepSeconds;
 
-        const res = await axios.get(`${BACKEND_URL}/api/v1/prometheus/query`, {
+        const res = await axios.get(`${PROMETHEUS_URL}/api/v1/query_range`, {
           params: {
             query: promQuery,
             start,
