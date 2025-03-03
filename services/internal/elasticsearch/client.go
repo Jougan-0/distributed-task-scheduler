@@ -86,7 +86,7 @@ func SearchTasks(index, query string) ([]map[string]interface{}, error) {
 	queryBody := map[string]interface{}{
 		"query": map[string]interface{}{
 			"term": map[string]interface{}{
-				"Name.keyword": query,
+				"Name": query,
 			},
 		},
 	}
