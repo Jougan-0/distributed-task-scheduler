@@ -117,7 +117,7 @@ func SearchTasks(index, query string) ([]map[string]interface{}, error) {
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("error parsing search response: %w", err)
 	}
-
+	log.Print("Result of elasticsearch: ", result)
 	rawHits, ok := result["hits"].(map[string]interface{})
 	if !ok {
 		return nil, nil
