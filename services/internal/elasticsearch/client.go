@@ -3,13 +3,15 @@ package elasticsearch
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"strings"
 
-	elasticsearch "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v7"
 )
 
 var ESClient *elasticsearch.Client
@@ -17,6 +19,10 @@ var ESClient *elasticsearch.Client
 func InitElasticsearch(esURL string) error {
 	cfg := elasticsearch.Config{
 		Addresses: []string{esURL},
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+		DisableMetaHeader: true,
 	}
 	client, err := elasticsearch.NewClient(cfg)
 	if err != nil {
