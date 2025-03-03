@@ -16,6 +16,7 @@ func handlePrometheusQueryRange(w http.ResponseWriter, r *http.Request) {
 	step := r.URL.Query().Get("step")
 	prom := os.Getenv("PROMETHEUS_URL")
 	promURL := fmt.Sprintf("%s/api/v1/query_range", prom)
+	log.Print("PRome url to be queried is : ", promURL)
 	promQueryParams := url.Values{}
 	promQueryParams.Set("query", query)
 	promQueryParams.Set("start", start)
