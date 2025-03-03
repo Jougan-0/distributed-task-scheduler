@@ -1,15 +1,10 @@
 {
     "version": 2,
-    "routes": [
-      { "src": "/(.*)", "dest": "/" }
-    ],
-    "functions": {
-      "api/**/*": {
-        "runtime": "nodejs18.x"
-      }
-    },
     "rewrites": [
-      { "source": "/(.*)", "destination": "/$1" }
+      {
+        "source": "/(.*)", 
+        "destination": "/$1"
+      }
     ],
     "headers": [
       {
@@ -18,6 +13,11 @@
           { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" }
         ]
       }
-    ]
+    ],
+    "functions": {
+      "api/**/*": {
+        "runtime": "nodejs18.x"
+      }
+    }
   }
   
