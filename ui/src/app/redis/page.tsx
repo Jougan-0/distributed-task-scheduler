@@ -10,14 +10,19 @@ export default function RedisPage() {
   const [data, setData] = useState<RedisKeyValue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+  const [backendUrl, setBackendUrl] = useState('');
 
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setBackendUrl(data.backendUrl));
+  }, []);
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
     const fetchData = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/redis/keys`);
+        const res = await axios.get(`${backendUrl}/redis/keys`);
         const responseData = res.data;
         console.log(res)
         if (res.status==200){
@@ -43,7 +48,7 @@ export default function RedisPage() {
     fetchData();
     intervalId = setInterval(fetchData, 5000);
     return () => clearInterval(intervalId);
-  }, [BACKEND_URL]);
+  }, [backendUrl]);
 
   return (
     <div className="p-6">

@@ -32,11 +32,16 @@ export default function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showCustomForm]);
-  const BACKEND_URL = process.env.BACKEND_URL||"http://localhost:8080";
-  const createExampleTask = async () => {
+  const [backendUrl, setBackendUrl] = useState('');
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setBackendUrl(data.backendUrl));
+  }, []);  const createExampleTask = async () => {
     setMessage("Creating example task...");
     try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/tasks`, {
+      const res = await fetch(`${backendUrl}/api/v1/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -60,7 +65,7 @@ export default function Home() {
   const createCustomTask = async () => {
     setMessage("Creating custom task...");
     try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/tasks`, {
+      const res = await fetch(`${backendUrl}/api/v1/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -21,12 +21,18 @@ export default function ElasticsearchPage() {
   const [query, setQuery] = useState("DemoTask");
   const [loading, setLoading] = useState(false);
 
-  const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+  const [backendUrl, setBackendUrl] = useState('');
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setBackendUrl(data.backendUrl));
+  }, []);
 
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/v1/tasks/search/${query}`);
+      const res = await axios.get(`${backendUrl}/api/v1/tasks/search/${query}`);
       setTasks(res.data || []);
     } catch (error) {
       console.error("Error fetching tasks:", error);

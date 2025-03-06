@@ -16,11 +16,17 @@ interface KafkaEvent {
 export default function KafkaEventsPage() {
   const [events, setEvents] = useState<KafkaEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [backendUrl, setBackendUrl] = useState('');
 
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setBackendUrl(data.backendUrl));
+  }, []);
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get<KafkaEvent[]>(process.env.BACKEND_URL + "/kafka/events");
+        const res = await axios.get<KafkaEvent[]>(backendUrl + "/kafka/events");
         setEvents(res.data);
       } catch (err) {
         console.error("Error fetching Kafka events:", err);
