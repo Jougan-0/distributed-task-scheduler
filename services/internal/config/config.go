@@ -12,6 +12,7 @@ type Config struct {
 	DBName     string
 	DBPort     string
 	ServerPort string
+	SSLMode    string
 }
 
 func LoadConfig() (*Config, error) {
@@ -22,14 +23,15 @@ func LoadConfig() (*Config, error) {
 		DBName:     getEnv("DB_NAME", "tasks_db"),
 		DBPort:     getEnv("DB_PORT", "5432"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+		SSLMode:    getEnv("SSL_MODE", "disable"),
 	}
 	return cfg, nil
 }
 
 func (c *Config) DSN() string {
 	return fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
-		c.DBHost, c.DBUser, c.DBPass, c.DBName, c.DBPort,
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		c.DBHost, c.DBUser, c.DBPass, c.DBName, c.DBPort, c.SSLMode,
 	)
 }
 

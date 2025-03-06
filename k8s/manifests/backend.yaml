@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: task-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: shlok08/distributed-task-scheduler:v1.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: "postgres.task-scheduler.svc.cluster.local"
+            - name: DB_PORT
+              value: "5432"
+            - name: SERVER_PORT
+              value: "8080"
+            - name: REDIS_HOST
+              value: "redis.task-scheduler.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: KAFKA_BROKERS
+              value: "kafka-broker.task-scheduler.svc.cluster.local:9092"
+            - name: ELASTICSEARCH_URL
+              value: "http://elasticsearch.task-scheduler.svc.cluster.local:9200"
+            - name: PROMETHEUS_URL
+              value: "http://prometheus.task-scheduler.svc.cluster.local:9090"
+            - name: SSL_MODE
+              value: "disable"
+          envFrom:
+            - secretRef:
+                name: db-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: task-scheduler
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
