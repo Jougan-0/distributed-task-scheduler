@@ -10,9 +10,17 @@ const WebSocketContext = createContext<IWebSocketContext | null>(null);
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = useState<string[]>([]);
 
+  const [backendUrl, setBackendUrl] = useState('');
+
   useEffect(() => {
-    const wsUrl = process.env.BACKEND_URL
-      ? process.env.BACKEND_URL.replace(/^http/, "ws") + "/ws"
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setBackendUrl(data.backendUrl));
+  }, []);
+  useEffect(() => {
+    
+    const wsUrl = backendUrl
+      ? backendUrl.replace(/^http/, "ws") + "/ws"
       : "ws://localhost:8080/ws";
 
     const ws = new WebSocket(wsUrl);
