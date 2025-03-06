@@ -8,8 +8,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="h-full">
+      <body className="h-full flex flex-col">
         <WebSocketProvider>
           <nav className="bg-gray-900 text-white p-4">
             <div className="container mx-auto flex justify-around">
@@ -21,11 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/elasticsearch">Elasticsearch</Link>
             </div>
           </nav>
-          <main className="p-6">{children}</main>
+
+          <main className="flex-grow p-6">{children}</main>
+
+          <footer className="text-center text-sm text-gray-200 py-4 bg-gray-800">
+            © {new Date().getFullYear()} Made with ❤️ by Jougan.
+          </footer>
         </WebSocketProvider>
-        <footer className="text-center text-m text-gray-200 mt-auto">
-      © {new Date().getFullYear()} Made with ❤️ by Jougan.
-            </footer>
       </body>
     </html>
   );
