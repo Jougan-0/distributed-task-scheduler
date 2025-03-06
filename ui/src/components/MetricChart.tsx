@@ -14,7 +14,7 @@ import {
 } from "recharts";
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  process.env.BACKEND_URL || "http://localhost:8080";
 
 interface MetricChartProps {
   promQuery: string;

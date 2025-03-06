@@ -32,7 +32,7 @@ export default function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showCustomForm]);
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL||"http://localhost:8080";
+  const BACKEND_URL = process.env.BACKEND_URL||"http://localhost:8080";
   const createExampleTask = async () => {
     setMessage("Creating example task...");
     try {
@@ -68,18 +68,23 @@ export default function Home() {
           type: taskType,
           payload: JSON.stringify({ email: taskEmail }),
           max_retries: 3,
-          scheduled_time: "",
+          scheduled_time: "",  
           priority,
         }),
       });
+
       if (!res.ok) {
-        throw new Error("Failed to create custom task");
+        const errorData = await res.json();
+        throw new Error(`Failed to create custom task: ${errorData.message || res.statusText}`);
       }
+
       setMessage(`Custom Task created successfully! (Type: ${taskType}, Email: ${taskEmail}, Priority: ${priority}). Check logs/metrics pages.`);
-    } catch (err) {
-      setMessage("Error creating custom task: " + err);
+    } catch (err: any) {
+      console.error("Error:", err); 
+      setMessage("Error creating custom task: " + err.message || err);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

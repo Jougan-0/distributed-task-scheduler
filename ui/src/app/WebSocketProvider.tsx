@@ -11,8 +11,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_BACKEND_URL
-      ? process.env.NEXT_PUBLIC_BACKEND_URL.replace(/^http/, "ws") + "/ws"
+    const wsUrl = process.env.BACKEND_URL
+      ? process.env.BACKEND_URL.replace(/^http/, "ws") + "/ws"
       : "ws://localhost:8080/ws";
 
     const ws = new WebSocket(wsUrl);

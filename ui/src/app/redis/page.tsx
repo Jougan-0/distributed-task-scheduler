@@ -10,7 +10,7 @@ export default function RedisPage() {
   const [data, setData] = useState<RedisKeyValue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;

@@ -21,7 +21,7 @@ export default function ElasticsearchPage() {
   const [query, setQuery] = useState("DemoTask");
   const [loading, setLoading] = useState(false);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
   const fetchTasks = async () => {
     setLoading(true);

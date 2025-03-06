@@ -20,7 +20,7 @@ export default function KafkaEventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get<KafkaEvent[]>(process.env.NEXT_PUBLIC_BACKEND_URL + "/kafka/events");
+        const res = await axios.get<KafkaEvent[]>(process.env.BACKEND_URL + "/kafka/events");
         setEvents(res.data);
       } catch (err) {
         console.error("Error fetching Kafka events:", err);
