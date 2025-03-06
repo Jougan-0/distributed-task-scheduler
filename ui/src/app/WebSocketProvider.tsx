@@ -18,10 +18,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       .then(data => setBackendUrl(data.backendUrl));
   }, []);
   useEffect(() => {
-    
-    const wsUrl = backendUrl
-      ? backendUrl.replace(/^http/, "ws") + "/ws"
-      : "ws://localhost:8080/ws";
+    if (!backendUrl) return;
+
+    const wsUrl = backendUrl.replace(/^http/, "ws") + "/ws";
+    console.log("Connecting to WebSocket:", wsUrl);
 
     const ws = new WebSocket(wsUrl);
 
@@ -44,7 +44,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [backendUrl]);
 
   return (
     <WebSocketContext.Provider value={{ logs }}>

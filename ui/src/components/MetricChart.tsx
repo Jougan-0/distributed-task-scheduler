@@ -13,17 +13,13 @@ import {
   Legend,
 } from "recharts";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL || "http://localhost:8080";
-
 interface MetricChartProps {
   promQuery: string;
   title: string;
   yAxisLabel: string;
-  rangeSeconds?: number; 
+  rangeSeconds?: number;
   stepSeconds?: number;
 }
-
 
 function parsePrometheusData(results: any[]): any[] {
   const dataMap: Record<string, Record<string, number | string>> = {};
@@ -61,15 +57,32 @@ export default function MetricChart({
 }: MetricChartProps) {
   const [data, setData] = useState<any[]>([]);
   const [seriesKeys, setSeriesKeys] = useState<string[]>([]);
+  const [backendUrl, setBackendUrl] = useState("");
 
+  // Fetch backend URL dynamically
   useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        setBackendUrl(data.backendUrl);
+        console.log("Backend URL set to:", data.backendUrl);
+      })
+      .catch((err) => console.error("Error fetching config:", err));
+  }, []);
+
+  // Fetch Prometheus metrics only when backendUrl is set
+  useEffect(() => {
+    if (!backendUrl) return; // Prevent fetching if backendUrl isn't set
+
     const fetchMetrics = async () => {
       try {
         const end = Math.floor(Date.now() / 1000);
         const start = end - rangeSeconds;
         const step = stepSeconds;
 
-        const res = await axios.get(`${BACKEND_URL}/api/v1/query_range`, {
+        console.log("Fetching Prometheus metrics from:", `${backendUrl}/api/v1/query_range`);
+
+        const res = await axios.get(`${backendUrl}/api/v1/query_range`, {
           params: {
             query: promQuery,
             start,
@@ -104,7 +117,7 @@ export default function MetricChart({
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 5000);
     return () => clearInterval(interval);
-  }, [promQuery, rangeSeconds, stepSeconds]);
+  }, [backendUrl, promQuery, rangeSeconds, stepSeconds]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">

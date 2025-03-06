@@ -18,24 +18,23 @@ export default function RedisPage() {
       .then(data => setBackendUrl(data.backendUrl));
   }, []);
   useEffect(() => {
+    if (!backendUrl) return; 
+
     let intervalId: NodeJS.Timeout;
 
     const fetchData = async () => {
       try {
+        console.log("Fetching Redis keys from:", `${backendUrl}/redis/keys`);
         const res = await axios.get(`${backendUrl}/redis/keys`);
-        const responseData = res.data;
-        console.log(res)
-        if (res.status==200){
-          if (res.data==null){
-            setData([]);
-          } else {
-            const validData = responseData.filter((item: any) => item?.key && item?.value);
-            setData(validData);
-          }
+
+        if (res.status === 200) {
+          const responseData = res.data;
+          const validData = responseData?.filter((item: any) => item?.key && item?.value) || [];
+          setData(validData);
         } else {
           throw new Error(`Request failed with status ${res.status}`);
         }
-      
+
         setError(null);
       } catch (err) {
         setError("Failed to fetch Redis data. Please try again.");
@@ -45,8 +44,9 @@ export default function RedisPage() {
       }
     };
 
-    fetchData();
+    fetchData(); 
     intervalId = setInterval(fetchData, 5000);
+
     return () => clearInterval(intervalId);
   }, [backendUrl]);
 

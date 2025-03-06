@@ -24,9 +24,12 @@ export default function KafkaEventsPage() {
       .then(data => setBackendUrl(data.backendUrl));
   }, []);
   useEffect(() => {
+    if (!backendUrl) return; 
+
     const fetchEvents = async () => {
       try {
-        const res = await axios.get<KafkaEvent[]>(backendUrl + "/kafka/events");
+        console.log("Fetching Kafka events from:", `${backendUrl}/kafka/events`);
+        const res = await axios.get<KafkaEvent[]>(`${backendUrl}/kafka/events`);
         setEvents(res.data);
       } catch (err) {
         console.error("Error fetching Kafka events:", err);
@@ -36,7 +39,7 @@ export default function KafkaEventsPage() {
     fetchEvents();
     const interval = setInterval(fetchEvents, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [backendUrl]);
 
   useEffect(() => {
     if (scrollRef.current) {

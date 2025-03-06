@@ -30,8 +30,14 @@ export default function ElasticsearchPage() {
   }, []);
 
   const fetchTasks = async () => {
+    if (!backendUrl) {
+      console.warn("Backend URL not set yet, skipping fetch");
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log("Fetching tasks from:", `${backendUrl}/api/v1/tasks/search/${query}`);
       const res = await axios.get(`${backendUrl}/api/v1/tasks/search/${query}`);
       setTasks(res.data || []);
     } catch (error) {
@@ -43,8 +49,10 @@ export default function ElasticsearchPage() {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (backendUrl) {
+      fetchTasks();
+    }
+  }, [backendUrl]);
 
   return (
     <div className="max-w-6xl mx-auto p-6">
