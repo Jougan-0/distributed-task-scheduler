@@ -23,6 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
           <main className="p-6">{children}</main>
         </WebSocketProvider>
+        <footer className="text-center text-m text-gray-200 mt-auto">
+      © {new Date().getFullYear()} Made with ❤️ by Jougan.
+            </footer>
       </body>
     </html>
   );
