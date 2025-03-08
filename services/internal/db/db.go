@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 
 func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	dsn := cfg.DSN()
+	log.Print(dsn)
 
 	gormLogLevelEnv := os.Getenv("GORM_LOG_LEVEL")
 	if gormLogLevelEnv == "" {

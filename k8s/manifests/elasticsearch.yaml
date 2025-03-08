@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: task-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+          ports:
+            - containerPort: 9200
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: xpack.security.enabled
+              value: "false"
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: esdata
+      volumes:
+        - name: esdata
+          persistentVolumeClaim:
+            claimName: elasticsearch-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: task-scheduler
+spec:
+  ports:
+    - port: 9200
+      targetPort: 9200
+  selector:
+    app: elasticsearch
