@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: task-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: shlok08/task-scheduler-ui:latest
+          ports:
+            - containerPort: 3000   # FIXED: Changed from 3001 to 3000
+          env:
+            - name: BACKEND_URL
+              value: "http://api-dst.jougan.live"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: task-scheduler
+spec:
+  ports:
+  - port: 3000   # FIXED: Changed from 3001 to 3000
+    targetPort: 3000   # FIXED: Changed from 3001 to 3000
+  selector:
+    app: ui
