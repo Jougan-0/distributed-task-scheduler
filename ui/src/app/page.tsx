@@ -90,7 +90,7 @@ export default function Home() {
   };
 
   return (
-<div className="min-h-[90vh] bg-gray-50 flex flex-col">
+<div className="min-h-[70vh] bg-gray-50 flex flex-col">
 <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-8 flex flex-col items-center">
       <h1 className="text-4xl font-extrabold mb-4">Distributed Task Scheduler Dashboard</h1>
       <p className="text-lg max-w-2xl text-center">

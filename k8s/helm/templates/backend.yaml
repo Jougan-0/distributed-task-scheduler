@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: task-scheduler
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.image.backend }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: "{{ .Values.db.host }}"
+            - name: DB_PORT
+              value: "{{ .Values.db.port }}"
+            - name: SERVER_PORT
+              value: "8080"
+            - name: REDIS_HOST
+              value: "{{ .Values.redis.host }}"
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.port }}"
+            - name: KAFKA_BROKERS
+              value: "{{ .Values.kafka.brokers }}"
+            - name: ELASTICSEARCH_URL
+              value: "{{ .Values.elasticsearch.url }}"
+            - name: PROMETHEUS_URL
+              value: "{{ .Values.prometheus.url }}"
+            - name: SSL_MODE
+              value: "disable"
+          envFrom:
+            - secretRef:
+                name: db-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: task-scheduler
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+---

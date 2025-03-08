@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: task-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: {{ .Values.image.ui }}
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BACKEND_URL
+              value: "{{ .Values.ui.backendUrl }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: task-scheduler
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: ui
+---

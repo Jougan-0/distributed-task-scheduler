@@ -1,0 +1,145 @@
+{{/* Prometheus ServiceAccount */}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Release.Name }}-prometheus"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+---
+{{/* Prometheus ClusterRole */}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Release.Name }}-prometheus"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups: 
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+---
+{{/* Prometheus ClusterRoleBinding */}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ .Release.Name }}-prometheus"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-prometheus"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Release.Name }}-prometheus"
+    namespace: "{{ .Release.Namespace }}"
+---
+{{/* Prometheus ConfigMap */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-prometheus-config"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'go_backend'
+        static_configs:
+          - targets: ['backend.task-scheduler.svc.cluster.local:8080']
+---
+{{/* Prometheus Deployment */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-prometheus"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      release: "{{ .Release.Name }}"
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        release: "{{ .Release.Name }}"
+    spec:
+      serviceAccountName: "{{ .Release.Name }}-prometheus"
+      containers:
+        - name: prometheus
+          image: "{{ .Values.image.prometheus }}"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+            - name: prometheus-storage
+              mountPath: /prometheus
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: "{{ .Release.Name }}-prometheus-config"
+        - name: prometheus-storage
+          emptyDir: {}
+---
+{{/* Prometheus Service */}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-prometheus"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "{{ .Release.Name }}"
+    meta.helm.sh/release-namespace: "{{ .Release.Namespace }}"
+spec:
+  selector:
+    app: prometheus
+    release: "{{ .Release.Name }}"
+  ports:
+    - port: 9090
+      targetPort: 9090

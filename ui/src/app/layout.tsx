@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <main className="flex-grow p-6">{children}</main>
 
-          <footer className="text-center text-sm text-gray-200 py-4 bg-gray-800">
+          <footer className="text-center text-sm text-gray-200 py-6 bg-gray-800">
             © {new Date().getFullYear()} Made with ❤️ by Jougan.
           </footer>
         </WebSocketProvider>
