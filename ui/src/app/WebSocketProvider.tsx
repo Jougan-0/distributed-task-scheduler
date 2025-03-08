@@ -20,8 +20,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!backendUrl) return;
 
-    const wsUrl = backendUrl.replace(/^http/, "ws") + "/ws";
-    console.log("Connecting to WebSocket:", wsUrl);
+    const wsUrl = backendUrl.startsWith("https")
+    ? backendUrl.replace("https", "wss") + "/ws"
+    : backendUrl.replace("http", "ws") + "/ws";
+      console.log("Connecting to WebSocket:", wsUrl);
 
     const ws = new WebSocket(wsUrl);
 
