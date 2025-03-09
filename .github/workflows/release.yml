@@ -54,5 +54,5 @@ jobs:
       - name: Push Helm Chart to Docker Hub
         run: |
               helm registry login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} registry-1.docker.io
-              helm push ./charts/distributed-task-scheduler-${{ github.event.release.tag_name }}.tgz oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}
+              helm push ./charts/task-scheduler-${{ github.event.release.tag_name }}.tgz oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}
         
