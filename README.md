@@ -2,7 +2,7 @@
 
 ## Overview
 The **Distributed Task Scheduler** is a scalable and fault-tolerant system designed to schedule and execute tasks efficiently in a distributed environment. It is deployed on **AWS EC2** using **Kafka, Redis, PostgreSQL, Elasticsearch, Prometheus, Grafana, WebSockets**, and **Kubernetes**.
-
+![Dashboard](github-assets/dashboard.PNG)
 ### **Features**
 - **Task Scheduling & Execution**: Priority-based execution with retry mechanisms.
 - **Real-time Logs & Events**: Uses **WebSockets** for real-time logging and **Kafka** for event-driven processing.
@@ -27,6 +27,7 @@ The system consists of the following services:
 - Publishes Kafka events on task completion/failure.
 
 ### 4. **Monitoring Service**
+![Prometheus](github-assets/Prometheus.PNG)
 - Uses **Prometheus & Grafana** for system health and task metrics.
 - **Elasticsearch** for logging and analytics.
 
