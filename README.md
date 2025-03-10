@@ -27,7 +27,7 @@ The system consists of the following services:
 - Publishes Kafka events on task completion/failure.
 
 ### 4. **Monitoring Service**
-![Prometheus](github-assets/Prometheus.PNG)
+![Prometheus](github-assets/Prometheus-dashboard.PNG)
 - Uses **Prometheus & Grafana** for system health and task metrics.
 - **Elasticsearch** for logging and analytics.
 
